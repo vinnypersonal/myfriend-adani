@@ -1,0 +1,50 @@
+# myfriend_adani pipeline settings
+
+page:
+  handle: myfriend_adani
+  timezone: Asia/Kolkata
+
+llm:
+  # "claude"  -> Anthropic API (secret ANTHROPIC_API_KEY)
+  # "github"  -> GitHub Models, the Copilot-side API (uses the workflow GITHUB_TOKEN, no extra secret)
+  # "mock"    -> offline test output, no API calls
+  provider: claude
+  claude_model: claude-sonnet-5-5
+  github_model: openai/gpt-4.1
+  max_tokens: 4000
+
+drafting:
+  posts_per_run: 1            # how many Ready claims to draft each scheduled run
+  max_source_chars: 12000     # source text fed to the model per claim
+  slides_min: 4
+  slides_max: 8
+
+publishing:
+  # "github_raw" -> images served from raw.githubusercontent.com (repo must be PUBLIC)
+  # "cloudinary" -> images uploaded to Cloudinary (secrets CLOUDINARY_CLOUD_NAME/_API_KEY/_API_SECRET)
+  image_host: github_raw
+  graph_version: v23.0
+  max_per_run: 1
+
+monitor:
+  feeds:
+    - https://news.google.com/rss/search?q=Adani&hl=en-IN&gl=IN&ceid=IN:en
+    - https://news.google.com/rss/search?q=Adani+SEBI&hl=en-IN&gl=IN&ceid=IN:en
+    - https://news.google.com/rss/search?q=Adani+court+OR+indictment+OR+probe&hl=en-IN&gl=IN&ceid=IN:en
+    - https://news.google.com/rss/search?q=%E0%A4%85%E0%A4%A1%E0%A4%BE%E0%A4%A8%E0%A5%80&hl=hi&gl=IN&ceid=IN:hi
+  keep_days: 3
+
+reverify:
+  stale_after_days: 30
+
+brand:
+  bg: "#101318"
+  panel: "#1A1F27"
+  text: "#F3F4F6"
+  muted: "#9CA3AF"
+  accent: "#F5B700"
+  labels:
+    PROVEN: "#E5484D"
+    ALLEGED: "#F76B15"
+    DISPUTED: "#6E8FD6"
+    CLEARED: "#30A46C"

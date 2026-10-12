@@ -1,0 +1,43 @@
+name: Publish to Instagram
+
+on:
+  schedule:
+    - cron: "20 13 * * *"         # daily 18:50 IST
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Validate only, do not post"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: register                 # one writer to data/claims.xlsx at a time
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: instagram        # add required reviewers here for a second approval
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12", cache: pip }
+      - run: pip install -r requirements.txt
+      - name: Publish approved carousels
+        env:
+          DRY_RUN: ${{ inputs.dry_run || 'false' }}
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
+          CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
+        run: cd scripts && python publish.py
+      - name: Commit register updates
+        run: |
+          git config user.name "myfriend-adani-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data posts
+          git diff --cached --quiet || git commit -m "Published post(s) $(date -u +%F)"
+          git push

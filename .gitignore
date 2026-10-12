@@ -1,0 +1,5 @@
+posts/_*
+reverify_report.md
+__pycache__/
+*.pyc
+.env

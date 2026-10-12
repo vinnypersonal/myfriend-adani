@@ -1,0 +1,33 @@
+name: Weekly re-verification
+
+on:
+  schedule:
+    - cron: "10 3 * * 0"          # Sundays 08:40 IST
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: register
+
+jobs:
+  reverify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12", cache: pip }
+      - run: pip install -r requirements.txt
+      - run: cd scripts && python reverify.py
+      - name: Commit register changes
+        run: |
+          git config user.name "myfriend-adani-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data
+          git diff --cached --quiet || git commit -m "Re-verification $(date -u +%F)"
+          git push
+      - name: Open review issue
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: gh issue create --title "Re-verification $(date -u +%F)" --body-file reverify_report.md --label reverify || gh issue create --title "Re-verification $(date -u +%F)" --body-file reverify_report.md

@@ -1,0 +1,29 @@
+name: Claude on PRs and issues
+
+# Comment "@claude shorten slide 3 and re-render" on a draft PR, or
+# "@claude research claim C004 and propose register entries" on an issue.
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  id-token: write
+
+jobs:
+  claude:
+    if: contains(github.event.comment.body, '@claude')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            Follow prompts/editorial_charter.md and prompts/drafter.md for any post edits.
+            Never add facts that are not in the claim's sources. After editing post.json,
+            re-render with: pip install -r requirements.txt && cd scripts && python render.py ../posts/<post_id>

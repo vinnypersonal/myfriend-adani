@@ -1,0 +1,75 @@
+name: Draft posts
+
+on:
+  schedule:
+    - cron: "15 2 * * 1,4"        # Mon & Thu 07:45 IST
+  workflow_dispatch:
+    inputs:
+      provider:
+        description: "LLM provider"
+        type: choice
+        options: [claude, github, mock]
+        default: claude
+
+permissions:
+  contents: write
+  pull-requests: write
+  models: read                    # GitHub Models (Copilot-side API) via GITHUB_TOKEN
+
+concurrency:
+  group: drafting
+
+jobs:
+  draft:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12", cache: pip }
+      - run: pip install -r requirements.txt
+
+      - name: Skip claims already in an open draft PR
+        id: skip
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          ids=$(gh pr list --label post-draft --state open --json headRefName \
+                --jq '[.[].headRefName | sub("^draft/";"") | split("-")[0]] | join(",")')
+          echo "ids=$ids" >> "$GITHUB_OUTPUT"
+
+      - name: Draft, fact-check and render
+        env:
+          LLM_PROVIDER: ${{ inputs.provider || 'claude' }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN: ${{ github.token }}
+          SKIP_CLAIMS: ${{ steps.skip.outputs.ids }}
+        run: |
+          cd scripts && python draft.py
+          cd .. && ls posts/
+
+      - name: Work out branch name
+        id: meta
+        run: |
+          id=$(ls -t posts | grep -v '^_' | head -1)
+          echo "post_id=$id" >> "$GITHUB_OUTPUT"
+          { echo "body<<EOF"; cat posts/_last_run.md 2>/dev/null; echo "EOF"; } >> "$GITHUB_OUTPUT"
+
+      - name: Open approval pull request
+        if: steps.meta.outputs.post_id != ''
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: draft/${{ steps.meta.outputs.post_id }}
+          title: "Post draft: ${{ steps.meta.outputs.post_id }}"
+          labels: post-draft
+          add-paths: posts/**
+          commit-message: "Draft post ${{ steps.meta.outputs.post_id }}"
+          body: |
+            ${{ steps.meta.outputs.body }}
+
+            ---
+            **Approve = merge.** Merged posts are published at the next scheduled slot (18:50 IST).
+            Ask for edits by commenting `@claude ...` on this PR.
+
+            - [ ] I opened every source today and the status label is still correct
+            - [ ] The Adani Group / government response is current
+            - [ ] Slides read correctly (open the PNGs in "Files changed")
+            - [ ] Hindi caption matches the English

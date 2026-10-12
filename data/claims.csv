@@ -1,0 +1,9 @@
+claim_id,event_date,title,summary,parties,category,status_label,govt_link,adani_response,source_urls,verified,verified_by,last_verified,post_status,published_label,post_id,notes
+C001,,Hindenburg Research report on Adani Group and SEBI proceedings,,,Markets / regulator,,,,,No,,,Backlog,,,"Research topic. Add sources, summary, label, response; then verified=Yes, post_status=Ready."
+C002,,SEBI orders on Hindenburg-related allegations (check for clearances),,,Markets / regulator,,,,,No,,,Backlog,,,"Research topic. Add sources, summary, label, response; then verified=Yes, post_status=Ready."
+C003,,US DOJ / SEC case on solar power contracts: current status,,,International case,,,,,No,,,Backlog,,,"Research topic. Add sources, summary, label, response; then verified=Yes, post_status=Ready."
+C004,,Mumbai and other airports: 2019 bidding rules and outcomes,,,Govt decision,,,,,No,,,Backlog,,,"Research topic. Add sources, summary, label, response; then verified=Yes, post_status=Ready."
+C005,,"Mundra port & SEZ land allotment: rates, CAG / court observations",,,Land,,,,,No,,,Backlog,,,"Research topic. Add sources, summary, label, response; then verified=Yes, post_status=Ready."
+C006,,DRI coal import valuation case: current status,,,Customs / regulator,,,,,No,,,Backlog,,,"Research topic. Add sources, summary, label, response; then verified=Yes, post_status=Ready."
+C007,,Bangladesh power purchase agreement: terms and review,,,International deal,,,,,No,,,Backlog,,,"Research topic. Add sources, summary, label, response; then verified=Yes, post_status=Ready."
+C008,,Dharavi redevelopment award,,,Govt decision,,,,,No,,,Backlog,,,"Research topic. Add sources, summary, label, response; then verified=Yes, post_status=Ready."
