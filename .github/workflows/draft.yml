@@ -1,0 +1,59 @@
+name: Draft Instagram carousel
+
+on:
+  workflow_dispatch:
+    inputs:
+      topic:
+        description: Growth, government decision, or case/controversy to document
+        required: true
+        type: string
+      sources:
+        description: JSON array of official public-record HTTPS URLs, including current status
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  draft:
+    if: github.ref_name == github.event.repository.default_branch
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4.3.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5.6.0
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install -r requirements.txt
+      - run: python -m unittest discover -s tests -v
+      - name: Draft, audit and render
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
+          TOPIC: ${{ inputs.topic }}
+          SOURCES: ${{ inputs.sources }}
+        run: |
+          export OPENAI_MODEL="${OPENAI_MODEL:-gpt-4.1}"
+          POST_ID="post-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          python pipeline.py draft --topic "$TOPIC" --sources "$SOURCES" --id "$POST_ID"
+          echo "POST_ID=$POST_ID" >> "$GITHUB_ENV"
+      - name: Open approval pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASE_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "content/$POST_ID"
+          git add "content/$POST_ID"
+          git commit -m "Draft Instagram carousel $POST_ID"
+          gh auth setup-git
+          git push origin "content/$POST_ID"
+          gh pr create --base "$BASE_BRANCH" \
+            --title "Review Instagram carousel: $POST_ID" \
+            --body "Review content/$POST_ID/post.json and every JPEG. Verify all sources, current case status, attribution, and omissions. Automated checks are not a guarantee of truth. Only the configured owner may approve by merging. Merge and publish on the draft's IST date; otherwise generate a new draft. Do not modify these generated files: redraft instead."
