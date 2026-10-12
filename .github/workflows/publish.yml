@@ -61,7 +61,29 @@ jobs:
           POST_ID: ${{ steps.approved.outputs.post_id }}
         run: |
           git fetch origin "$MERGE_SHA" --depth=1
-          git checkout "$MERGE_SHA" -- "content/$POST_ID"
+          python - <<'PY'
+          import os, re, subprocess
+          from pathlib import Path
+          sha, post_id = os.environ["MERGE_SHA"], os.environ["POST_ID"]
+          assert re.fullmatch(r"[0-9a-f]{40}", sha)
+          assert re.fullmatch(r"[a-z0-9-]{1,80}", post_id)
+          directory = Path("content") / post_id
+          tree = subprocess.check_output(
+              ["git", "ls-tree", "-r", sha, "--", str(directory)], text=True
+          ).splitlines()
+          assert 3 <= len(tree) <= 11
+          directory.mkdir(parents=True, exist_ok=True)
+          assert not directory.is_symlink()
+          for entry in tree:
+              metadata, filename = entry.split("\t", 1)
+              mode, kind, blob = metadata.split()
+              path = Path(filename)
+              assert mode == "100644" and kind == "blob", "Only regular content files allowed"
+              assert path.parent == directory
+              assert re.fullmatch(r"post\.json|0[1-9]\.jpg|10\.jpg", path.name)
+              assert not path.is_symlink()
+              path.write_bytes(subprocess.check_output(["git", "cat-file", "blob", blob]))
+          PY
       - uses: actions/setup-python@v5.6.0
         with:
           python-version: "3.12"
